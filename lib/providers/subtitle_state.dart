@@ -6,21 +6,38 @@ class SubtitleState extends ChangeNotifier {
   List<VideoFile> _videoFiles = [];
   String _selectedFormat = 'srt';
   bool _isProcessing = false;
-  Map<String, int?> _selectedTracks = {};
   double _progress = 0.0;
   String? _currentProcessingFile;
+  int? _selectedIndex; // Seçili altyazı index'i
 
   // Getters
   List<VideoFile> get videoFiles => _videoFiles;
   String get selectedFormat => _selectedFormat;
   bool get isProcessing => _isProcessing;
-  Map<String, int?> get selectedTracks => _selectedTracks;
   double get progress => _progress;
   String? get currentProcessingFile => _currentProcessingFile;
+  int? get selectedIndex => _selectedIndex;
+
+  // Mevcut videolarda bulunan tüm altyazı index'lerini getir
+  Set<int> get availableIndices {
+    Set<int> indices = {};
+    for (var file in _videoFiles) {
+      for (var track in file.subtitleTracks) {
+        indices.add(track.index);
+      }
+    }
+    return indices;
+  }
+
+  void setSelectedIndex(int? index) {
+    _selectedIndex = index;
+    notifyListeners();
+  }
 
   void setVideoFiles(List<VideoFile> files) {
     _videoFiles = files;
-    _selectedTracks.clear(); // Yeni dosyalar eklendiğinde seçimleri sıfırla
+    // Yeni videolar yüklendiğinde seçili index'i sıfırla
+    _selectedIndex = null;
     notifyListeners();
   }
 
@@ -44,21 +61,16 @@ class SubtitleState extends ChangeNotifier {
     notifyListeners();
   }
 
-  void setSelectedTrack(String filePath, int? trackIndex) {
-    _selectedTracks[filePath] = trackIndex;
-    notifyListeners();
-  }
-
   void clearAll() {
     _videoFiles = [];
-    _selectedTracks = {};
     _progress = 0.0;
     _currentProcessingFile = null;
+    _selectedIndex = null;
     notifyListeners();
   }
 
-  bool isTrackSelected(String filePath) {
-    return _selectedTracks.containsKey(filePath) &&
-        _selectedTracks[filePath] != null;
+  void removeVideoFile(String filePath) {
+    _videoFiles.removeWhere((file) => file.path == filePath);
+    notifyListeners();
   }
 }
