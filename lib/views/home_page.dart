@@ -3,6 +3,7 @@ import 'package:extractsubs/models/video_file.dart';
 import 'package:extractsubs/providers/subtitle_state.dart';
 import 'package:extractsubs/services/ffmpeg_service.dart';
 import 'package:extractsubs/services/file_service.dart';
+import 'package:extractsubs/utils/subtitle_utils.dart';
 import 'package:extractsubs/views/format_selector.dart';
 import 'package:extractsubs/views/index_selector.dart';
 import 'package:flutter/material.dart';
@@ -88,6 +89,21 @@ class HomePage extends StatelessWidget {
       return;
     }
 
+    // PGS/SUB kontrolü
+    final codec = state.currentCodec;
+    if (codec != null &&
+        SubtitleUtils.isBitmapSubtitle(codec) &&
+        state.selectedFormat != 'sup') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+              'Bitmap altyazılar (PGS/SUB) sadece SUP formatında çıkartılabilir'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
     state.setProcessing(true);
     final List<String> errors = [];
     final List<String> successes = [];
@@ -98,7 +114,6 @@ class HomePage extends StatelessWidget {
         final videoFile = state.videoFiles[i];
         state.updateProgress(i / totalFiles, videoFile.name);
 
-        // Seçili index'e sahip altyazı parçasını bul
         final track = videoFile.subtitleTracks
             .where((track) => track.index == state.selectedIndex)
             .firstOrNull;
@@ -194,6 +209,11 @@ class HomePage extends StatelessWidget {
       ),
       body: Consumer<SubtitleState>(
         builder: (context, state, child) {
+          // Get current codec for warning
+          final currentCodec = state.currentCodec;
+          final showBitmapWarning = currentCodec != null &&
+              SubtitleUtils.isBitmapSubtitle(currentCodec);
+
           return Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
@@ -224,10 +244,41 @@ class HomePage extends StatelessWidget {
                           onFormatChanged: (format) {
                             if (format != null) state.setFormat(format);
                           },
+                          currentCodec: currentCodec,
                         ),
                       ),
                     ],
                   ),
+                  if (showBitmapWarning) ...[
+                    const SizedBox(height: 8),
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.orange.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(
+                          color: Colors.orange.withOpacity(0.3),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.warning_amber_rounded,
+                              color: Colors.orange.shade700, size: 20),
+                          const SizedBox(width: 8),
+                          Expanded(
+                            child: Text(
+                              'Bu altyazı bitmap formatında (PGS/SUB). '
+                              'Sadece SUP formatında çıkartılabilir.',
+                              style: TextStyle(
+                                color: Colors.orange.shade900,
+                                fontSize: 13,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                   const SizedBox(height: 16),
                   Text(
                     'Seçili Videolar (${state.videoFiles.length}):',
@@ -239,7 +290,6 @@ class HomePage extends StatelessWidget {
                       itemCount: state.videoFiles.length,
                       itemBuilder: (context, index) {
                         final videoFile = state.videoFiles[index];
-                        // Seçili index için altyazı bilgisini bul
                         final selectedTrack = state.selectedIndex != null
                             ? videoFile.subtitleTracks
                                 .where((t) => t.index == state.selectedIndex)

@@ -20,10 +20,6 @@ class FormatSelector extends StatelessWidget {
         ? SubtitleUtils.getSupportedFormatsForCodec(currentCodec!)
         : ['srt', 'ass', 'ssa', 'vtt', 'sup'];
 
-    final warning = currentCodec != null
-        ? SubtitleUtils.getWarningForCodec(currentCodec!)
-        : '';
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -43,28 +39,6 @@ class FormatSelector extends StatelessWidget {
             }
           },
         ),
-        if (warning.isNotEmpty) ...[
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.orange.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.warning_amber, color: Colors.orange),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    warning,
-                    style: const TextStyle(color: Colors.orange),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
       ],
     );
   }

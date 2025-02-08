@@ -1,5 +1,6 @@
 // lib/providers/subtitle_state.dart
 import 'package:extractsubs/models/video_file.dart';
+import 'package:extractsubs/utils/subtitle_utils.dart';
 import 'package:flutter/foundation.dart';
 
 class SubtitleState extends ChangeNotifier {
@@ -8,7 +9,7 @@ class SubtitleState extends ChangeNotifier {
   bool _isProcessing = false;
   double _progress = 0.0;
   String? _currentProcessingFile;
-  int? _selectedIndex; // Seçili altyazı index'i
+  int? _selectedIndex;
 
   // Getters
   List<VideoFile> get videoFiles => _videoFiles;
@@ -17,6 +18,21 @@ class SubtitleState extends ChangeNotifier {
   double get progress => _progress;
   String? get currentProcessingFile => _currentProcessingFile;
   int? get selectedIndex => _selectedIndex;
+
+  // Geçerli altyazı kodekini al
+  String? get currentCodec {
+    if (_selectedIndex == null || _videoFiles.isEmpty) return null;
+
+    for (var file in _videoFiles) {
+      final track = file.subtitleTracks
+          .where((t) => t.index == _selectedIndex)
+          .firstOrNull;
+      if (track != null) {
+        return track.codec;
+      }
+    }
+    return null;
+  }
 
   // Mevcut videolarda bulunan tüm altyazı index'lerini getir
   Set<int> get availableIndices {
@@ -31,6 +47,15 @@ class SubtitleState extends ChangeNotifier {
 
   void setSelectedIndex(int? index) {
     _selectedIndex = index;
+
+    // Index seçildiğinde ve PGS/SUP altyazı ise otomatik olarak SUP formatına geç
+    if (index != null) {
+      final codec = currentCodec;
+      if (codec != null && SubtitleUtils.isBitmapSubtitle(codec)) {
+        _selectedFormat = 'sup';
+      }
+    }
+
     notifyListeners();
   }
 
@@ -42,6 +67,16 @@ class SubtitleState extends ChangeNotifier {
   }
 
   void setFormat(String format) {
+    // Eğer bitmap altyazı seçili ve SUP dışında bir format seçilmeye çalışılıyorsa izin verme
+    if (_selectedIndex != null) {
+      final codec = currentCodec;
+      if (codec != null &&
+          SubtitleUtils.isBitmapSubtitle(codec) &&
+          format != 'sup') {
+        return;
+      }
+    }
+
     _selectedFormat = format;
     notifyListeners();
   }

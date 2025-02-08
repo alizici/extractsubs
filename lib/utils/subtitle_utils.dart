@@ -13,14 +13,14 @@ class SubtitleUtils {
 
   static List<String> getSupportedFormatsForCodec(String codec) {
     if (isBitmapSubtitle(codec)) {
-      return ['sup'];
+      return ['sup']; // Bitmap altyazılar için sadece SUP formatı
     }
     return ['srt', 'ass', 'ssa', 'vtt'];
   }
 
   static String getWarningForCodec(String codec) {
     if (isBitmapSubtitle(codec)) {
-      return 'Bu altyazı bitmap formatında (PGS/SUB). Sadece SUP formatında çıkartılabilir.';
+      return 'Bu altyazı bitmap formatında (PGS/SUB). Sadece SUP formatında çıkartılabilir. Text formatına dönüştürülemez.';
     }
     return '';
   }

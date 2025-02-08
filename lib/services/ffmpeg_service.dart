@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:extractsubs/models/subtitle_track.dart';
 import 'package:extractsubs/utils/language_utils.dart';
+import 'package:extractsubs/utils/subtitle_utils.dart';
 import 'package:ffmpeg_kit_flutter/ffmpeg_kit.dart';
 import 'package:ffmpeg_kit_flutter/return_code.dart';
 import 'package:path/path.dart' as path;
@@ -41,6 +42,23 @@ class FFmpegService {
         orElse: () => throw Exception('Altyazı parçası bulunamadı'),
       );
 
+      // Bitmap altyazı kontrolü - Önemli: Buradan sonra return edilmeli
+      if (SubtitleUtils.isBitmapSubtitle(selectedTrack.codec)) {
+        if (format.toLowerCase() != 'sup') {
+          // Eğer PGS/SUP altyazısı için SUP dışında bir format seçildiyse hata ver
+          throw Exception(
+              'Bitmap altyazılar (PGS/SUB) sadece SUP formatında çıkartılabilir');
+        }
+        final command =
+            '-i "$inputPath" -map 0:$trackIndex -c:s copy "$outputPath"';
+        print('FFmpeg bitmap subtitle extraction command: $command');
+        final session = await FFmpegKit.execute(command);
+        final logs = await session.getAllLogsAsString() ?? '';
+        print('Bitmap extraction logs: $logs');
+        return ReturnCode.isSuccess(await session.getReturnCode());
+      }
+
+      // Buraya kadar gelindiyse bitmap değildir, diğer dönüşümlere devam et
       String command;
       final inputCodec = selectedTrack.codec.toLowerCase();
       format = format.toLowerCase();
@@ -114,7 +132,6 @@ class FFmpegService {
       }
 
       print('FFmpeg extraction command: $command');
-
       final session = await FFmpegKit.execute(command);
       final returnCode = await session.getReturnCode();
       final logs = await session.getAllLogsAsString() ?? '';
