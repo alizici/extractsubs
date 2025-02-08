@@ -33,27 +33,6 @@ class VideoUtils {
     return supportedVideoFormats.contains(extension);
   }
 
-  static Future<bool> isFileSizeValid(String filePath,
-      {int maxSizeInGB = 4}) async {
-    try {
-      final file = File(filePath);
-
-      // Check if file exists
-      if (!await file.exists()) {
-        return false;
-      }
-
-      final sizeInBytes = await file.length();
-      final sizeInGB = sizeInBytes / (1024 * 1024 * 1024);
-
-      // Log file size for debugging
-
-      return sizeInGB <= maxSizeInGB;
-    } catch (e, stackTrace) {
-      return false;
-    }
-  }
-
   /// Dosyanın video dosyası olup olmadığını FFmpeg ile kontrol eder
   /// Dosyanın video dosyası olup olmadığını FFmpeg ile kontrol eder
   /// Dosyanın video dosyası olup olmadığını FFmpeg ile kontrol eder
@@ -103,9 +82,9 @@ class VideoUtils {
 
       // Race between timeout and validation
       return await Future.any([validationFuture, timeoutFuture]);
-    } on TimeoutException catch (e) {
+    } on TimeoutException {
       return false;
-    } catch (e, stackTrace) {
+    } catch (e) {
       return false;
     }
   }

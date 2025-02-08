@@ -21,12 +21,6 @@ class FileService {
         for (var path in paths) {
           final fileName = path.split('/').last;
 
-          // File size check
-          if (!await VideoUtils.isFileSizeValid(path)) {
-            errors.add('$fileName: Dosya boyutu çok büyük (maksimum 4GB)');
-            continue;
-          }
-
           // Video format check
           if (!await VideoUtils.isValidVideoFile(path)) {
             errors.add(
