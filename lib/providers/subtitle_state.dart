@@ -18,6 +18,34 @@ class SubtitleState extends ChangeNotifier {
   double get progress => _progress;
   String? get currentProcessingFile => _currentProcessingFile;
   int? get selectedIndex => _selectedIndex;
+  final Map<String, bool> _expandedItems = {};
+
+  // Getter
+  bool isExpanded(String path) => _expandedItems[path] ?? false;
+
+  // Genişletme durumunu değiştir
+  void toggleExpanded(String path) {
+    _expandedItems[path] = !(_expandedItems[path] ?? false);
+    notifyListeners();
+  }
+
+  // Video dosyası silindiğinde veya tümü temizlendiğinde expand durumlarını da temizle
+
+  // Video dosyası silindiğinde veya tümü temizlendiğinde expand durumlarını da temizle
+  void clearAll() {
+    _videoFiles = [];
+    _progress = 0.0;
+    _currentProcessingFile = null;
+    _selectedIndex = null;
+    _expandedItems.clear(); // Expand durumlarını temizle
+    notifyListeners();
+  }
+
+  void removeVideoFile(String filePath) {
+    _videoFiles.removeWhere((file) => file.path == filePath);
+    _expandedItems.remove(filePath); // Expand durumunu temizle
+    notifyListeners();
+  }
 
   // Geçerli altyazı kodekini al
   String? get currentCodec {
@@ -93,19 +121,6 @@ class SubtitleState extends ChangeNotifier {
   void updateProgress(double value, String fileName) {
     _progress = value;
     _currentProcessingFile = fileName;
-    notifyListeners();
-  }
-
-  void clearAll() {
-    _videoFiles = [];
-    _progress = 0.0;
-    _currentProcessingFile = null;
-    _selectedIndex = null;
-    notifyListeners();
-  }
-
-  void removeVideoFile(String filePath) {
-    _videoFiles.removeWhere((file) => file.path == filePath);
     notifyListeners();
   }
 }

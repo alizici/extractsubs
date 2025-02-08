@@ -6,12 +6,18 @@ import 'package:extractsubs/services/file_service.dart';
 import 'package:extractsubs/utils/subtitle_utils.dart';
 import 'package:extractsubs/views/format_selector.dart';
 import 'package:extractsubs/views/index_selector.dart';
+import 'package:extractsubs/views/subtitle_track_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({Key? key}) : super(key: key);
 
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
   Future<void> _pickFiles(BuildContext context) async {
     final state = Provider.of<SubtitleState>(context, listen: false);
     state.setProcessing(true);
@@ -190,6 +196,51 @@ class HomePage extends StatelessWidget {
     }
   }
 
+  Future<void> _extractSingleSubtitle(
+      BuildContext context, String videoPath, int trackIndex) async {
+    final state = Provider.of<SubtitleState>(context, listen: false);
+    state.setProcessing(true);
+
+    try {
+      final outputPath = FileService.getOutputPath(
+        videoPath,
+        state.selectedFormat,
+      );
+
+      final success = await FFmpegService.extractSubtitle(
+        inputPath: videoPath,
+        outputPath: outputPath,
+        format: state.selectedFormat,
+        trackIndex: trackIndex,
+      );
+
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Altyazı başarıyla çıkarıldı'),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Altyazı çıkarılırken hata oluştu'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('İşlem sırasında hata oluştu: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    } finally {
+      state.setProcessing(false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -298,39 +349,61 @@ class HomePage extends StatelessWidget {
 
                         return Card(
                           margin: const EdgeInsets.only(bottom: 8),
-                          child: ListTile(
-                            leading: const Icon(Icons.video_file),
-                            title: Text(videoFile.name),
-                            subtitle: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'Mevcut altyazılar: ${videoFile.subtitleTracks.map((t) => '${t.language} (${t.index})').join(", ")}',
+                          child: Column(
+                            children: [
+                              ListTile(
+                                leading: const Icon(Icons.video_file),
+                                title: Text(videoFile.name),
+                                subtitle: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Mevcut altyazılar: ${videoFile.subtitleTracks.map((t) => '${t.language} (${t.index})').join(", ")}',
+                                    ),
+                                    if (selectedTrack != null)
+                                      Text(
+                                        'Seçili: ${selectedTrack.language} (${selectedTrack.index})',
+                                        style: const TextStyle(
+                                          fontWeight: FontWeight.bold,
+                                          color: Colors.green,
+                                        ),
+                                      ),
+                                  ],
                                 ),
-                                if (selectedTrack != null)
-                                  Text(
-                                    'Seçili: ${selectedTrack.language} (${selectedTrack.index})',
-                                    style: const TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      color: Colors.green,
+                                trailing: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    IconButton(
+                                      icon: Icon(
+                                        state.isExpanded(videoFile.path)
+                                            ? Icons.expand_less
+                                            : Icons.expand_more,
+                                      ),
+                                      onPressed: () =>
+                                          state.toggleExpanded(videoFile.path),
                                     ),
-                                  ),
-                                if (state.selectedIndex != null &&
-                                    selectedTrack == null)
-                                  Text(
-                                    'Uyarı: Seçili index ${state.selectedIndex} bu videoda mevcut değil',
-                                    style: const TextStyle(
-                                      color: Colors.orange,
+                                    IconButton(
+                                      icon: const Icon(Icons.delete),
+                                      onPressed: () =>
+                                          state.removeVideoFile(videoFile.path),
+                                      tooltip: 'Dosyayı Kaldır',
                                     ),
-                                  ),
-                              ],
-                            ),
-                            trailing: IconButton(
-                              icon: const Icon(Icons.delete),
-                              onPressed: () =>
-                                  state.removeVideoFile(videoFile.path),
-                              tooltip: 'Dosyayı Kaldır',
-                            ),
+                                  ],
+                                ),
+                              ),
+                              if (state.isExpanded(videoFile.path))
+                                SubtitleTrackSelector(
+                                  videoFile: videoFile,
+                                  onExtract: (pathAndIndex) {
+                                    final parts = pathAndIndex.split('|');
+                                    _extractSingleSubtitle(
+                                      context,
+                                      parts[0],
+                                      int.parse(parts[1]),
+                                    );
+                                  },
+                                ),
+                            ],
                           ),
                         );
                       },

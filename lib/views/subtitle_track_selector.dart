@@ -2,16 +2,16 @@
 import 'package:extractsubs/models/video_file.dart';
 import 'package:flutter/material.dart';
 
+// lib/views/subtitle_track_selector.dart
+
 class SubtitleTrackSelector extends StatelessWidget {
   final VideoFile videoFile;
-  final int? selectedTrackIndex;
-  final Function(int?) onTrackSelected;
+  final Function(String) onExtract;
 
   const SubtitleTrackSelector({
     Key? key,
     required this.videoFile,
-    required this.selectedTrackIndex,
-    required this.onTrackSelected,
+    required this.onExtract,
   }) : super(key: key);
 
   @override
@@ -19,14 +19,20 @@ class SubtitleTrackSelector extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text('${videoFile.name} - Altyazı Parçaları:'),
+        const Divider(),
+        const Padding(
+          padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+          child: Text('Bu video için altyazılar:'),
+        ),
         ...videoFile.subtitleTracks.map((track) {
-          return RadioListTile<int>(
-            title: Text(
-                '${track.language} - ${track.codec}${track.title.isNotEmpty ? ' - ${track.title}' : ''}'),
-            value: track.index,
-            groupValue: selectedTrackIndex,
-            onChanged: onTrackSelected,
+          return ListTile(
+            dense: true,
+            title: Text('${track.language} (İndeks: ${track.index})'),
+            subtitle: Text('Codec: ${track.codec}'),
+            trailing: ElevatedButton(
+              onPressed: () => onExtract('${videoFile.path}|${track.index}'),
+              child: const Text('Çıkar'),
+            ),
           );
         }),
       ],
