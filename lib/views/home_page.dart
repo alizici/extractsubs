@@ -95,21 +95,6 @@ class _HomePageState extends State<HomePage> {
       return;
     }
 
-    // PGS/SUB kontrolü
-    final codec = state.currentCodec;
-    if (codec != null &&
-        SubtitleUtils.isBitmapSubtitle(codec) &&
-        state.selectedFormat != 'sup') {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-              'Bitmap altyazılar (PGS/SUB) sadece SUP formatında çıkartılabilir'),
-          backgroundColor: Colors.orange,
-        ),
-      );
-      return;
-    }
-
     state.setProcessing(true);
     final List<String> errors = [];
     final List<String> successes = [];
@@ -120,13 +105,22 @@ class _HomePageState extends State<HomePage> {
         final videoFile = state.videoFiles[i];
         state.updateProgress(i / totalFiles, videoFile.name);
 
+        // Her video için seçili indeksi al (manuel veya global)
+        final selectedIndex = state.getSelectedIndexForVideo(videoFile.path);
         final track = videoFile.subtitleTracks
-            .where((track) => track.index == state.selectedIndex)
+            .where((track) => track.index == selectedIndex)
             .firstOrNull;
 
         if (track == null) {
+          errors.add('${videoFile.name} - İndeks $selectedIndex bulunamadı');
+          continue;
+        }
+
+        // PGS/SUB kontrolü
+        if (SubtitleUtils.isBitmapSubtitle(track.codec) &&
+            state.selectedFormat != 'sup') {
           errors.add(
-              '${videoFile.name} - İndeks ${state.selectedIndex} bulunamadı');
+              '${videoFile.name} - Bitmap altyazılar sadece SUP formatında çıkartılabilir');
           continue;
         }
 

@@ -10,6 +10,9 @@ class SubtitleState extends ChangeNotifier {
   double _progress = 0.0;
   String? _currentProcessingFile;
   int? _selectedIndex;
+  final Map<String, bool> _expandedItems = {};
+  final Map<String, int> _manualIndices =
+      {}; // Video path -> manual indeks eşlemesi
 
   // Getters
   List<VideoFile> get videoFiles => _videoFiles;
@@ -18,42 +21,56 @@ class SubtitleState extends ChangeNotifier {
   double get progress => _progress;
   String? get currentProcessingFile => _currentProcessingFile;
   int? get selectedIndex => _selectedIndex;
-  final Map<String, bool> _expandedItems = {};
-
-  // Getter
   bool isExpanded(String path) => _expandedItems[path] ?? false;
 
-  // Genişletme durumunu değiştir
+  // Manuel indeks seçili mi kontrolü için getter
+  bool hasManualIndex(String path) => _manualIndices.containsKey(path);
+
+  // Video için seçili indeksi getir (manuel veya global)
+  int? getSelectedIndexForVideo(String videoPath) {
+    return _manualIndices[videoPath] ?? _selectedIndex;
+  }
+
+  // Manuel indeks ayarla
+  void setManualIndex(String videoPath, int index) {
+    _manualIndices[videoPath] = index;
+    notifyListeners();
+  }
+
+  // Manuel indeksi temizle
+  void clearManualIndex(String videoPath) {
+    _manualIndices.remove(videoPath);
+    notifyListeners();
+  }
+
   void toggleExpanded(String path) {
     _expandedItems[path] = !(_expandedItems[path] ?? false);
     notifyListeners();
   }
 
-  // Video dosyası silindiğinde veya tümü temizlendiğinde expand durumlarını da temizle
-
-  // Video dosyası silindiğinde veya tümü temizlendiğinde expand durumlarını da temizle
   void clearAll() {
     _videoFiles = [];
     _progress = 0.0;
     _currentProcessingFile = null;
     _selectedIndex = null;
-    _expandedItems.clear(); // Expand durumlarını temizle
+    _expandedItems.clear();
+    _manualIndices.clear(); // Manuel indeksleri temizle
     notifyListeners();
   }
 
   void removeVideoFile(String filePath) {
     _videoFiles.removeWhere((file) => file.path == filePath);
-    _expandedItems.remove(filePath); // Expand durumunu temizle
+    _expandedItems.remove(filePath);
+    _manualIndices.remove(filePath); // Manuel indeksi temizle
     notifyListeners();
   }
 
-  // Geçerli altyazı kodekini al
   String? get currentCodec {
     if (_selectedIndex == null || _videoFiles.isEmpty) return null;
 
     for (var file in _videoFiles) {
       final track = file.subtitleTracks
-          .where((t) => t.index == _selectedIndex)
+          .where((t) => t.index == getSelectedIndexForVideo(file.path))
           .firstOrNull;
       if (track != null) {
         return track.codec;
@@ -62,7 +79,6 @@ class SubtitleState extends ChangeNotifier {
     return null;
   }
 
-  // Mevcut videolarda bulunan tüm altyazı index'lerini getir
   Set<int> get availableIndices {
     Set<int> indices = {};
     for (var file in _videoFiles) {
@@ -75,6 +91,8 @@ class SubtitleState extends ChangeNotifier {
 
   void setSelectedIndex(int? index) {
     _selectedIndex = index;
+    // Global indeks değiştiğinde manuel indeksleri temizle
+    _manualIndices.clear();
 
     // Index seçildiğinde ve PGS/SUP altyazı ise otomatik olarak SUP formatına geç
     if (index != null) {
@@ -89,8 +107,9 @@ class SubtitleState extends ChangeNotifier {
 
   void setVideoFiles(List<VideoFile> files) {
     _videoFiles = files;
-    // Yeni videolar yüklendiğinde seçili index'i sıfırla
     _selectedIndex = null;
+    _manualIndices
+        .clear(); // Yeni videolar yüklendiğinde manuel indeksleri temizle
     notifyListeners();
   }
 
