@@ -34,8 +34,6 @@ class VideoUtils {
   }
 
   /// Dosyanın video dosyası olup olmadığını FFmpeg ile kontrol eder
-  /// Dosyanın video dosyası olup olmadığını FFmpeg ile kontrol eder
-  /// Dosyanın video dosyası olup olmadığını FFmpeg ile kontrol eder
   static Future<bool> isValidVideoFile(String filePath) async {
     try {
       // First check if the file exists
@@ -54,30 +52,9 @@ class VideoUtils {
               '-v error -i "${Uri.file(filePath).toFilePath()}" -t 1 -f null -')
           .then((session) async {
         final ReturnCode? returnCode = await session.getReturnCode();
-        final String? logs = await session.getAllLogsAsString();
 
-        // Log the complete FFmpeg response for debugging
-
-        // If we got a successful return code, it's a valid video file
-        if (ReturnCode.isSuccess(returnCode)) {
-          return true;
-        }
-
-        // Check for common video-related error messages that still indicate a valid file
-        if (logs != null) {
-          final lowerLogs = logs.toLowerCase();
-          if (lowerLogs.contains('video') ||
-              lowerLogs.contains('codec') ||
-              lowerLogs.contains('stream') ||
-              lowerLogs.contains('hevc') ||
-              lowerLogs.contains('h264') ||
-              lowerLogs.contains('h.264') ||
-              lowerLogs.contains('avc')) {
-            return true;
-          }
-        }
-
-        return false;
+        // Sadece FFmpeg dönüş koduna göre değerlendirme yap
+        return ReturnCode.isSuccess(returnCode);
       });
 
       // Race between timeout and validation

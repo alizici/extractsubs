@@ -11,7 +11,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({Key? key}) : super(key: key);
+  const HomePage({super.key});
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -73,7 +73,7 @@ class _HomePageState extends State<HomePage> {
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('${e.toString()}'),
+          content: Text(e.toString()),
           backgroundColor: Colors.red,
         ),
       );
@@ -388,12 +388,11 @@ class _HomePageState extends State<HomePage> {
                               if (state.isExpanded(videoFile.path))
                                 SubtitleTrackSelector(
                                   videoFile: videoFile,
-                                  onExtract: (pathAndIndex) {
-                                    final parts = pathAndIndex.split('|');
-                                    _extractSingleSubtitle(
+                                  onExtract: (params) async {
+                                    await _extractSingleSubtitle(
                                       context,
-                                      parts[0],
-                                      int.parse(parts[1]),
+                                      params.videoPath,
+                                      params.trackIndex,
                                     );
                                   },
                                 ),

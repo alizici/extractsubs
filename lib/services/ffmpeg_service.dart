@@ -222,6 +222,13 @@ class FFmpegService {
     try {
       // Tüm altyazı parçalarını çıkar
       final tracks = await getSubtitleTracks(inputPath);
+
+      // Altyazı parçası bulunamadıysa false döndür
+      if (tracks.isEmpty) {
+        print('Dosyada altyazı parçası bulunamadı: $inputPath');
+        return false;
+      }
+
       bool allSuccess = true;
 
       for (var track in tracks) {

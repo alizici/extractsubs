@@ -8,11 +8,11 @@ class FormatSelector extends StatelessWidget {
   final String? currentCodec;
 
   const FormatSelector({
-    Key? key,
+    super.key,
     required this.selectedFormat,
     required this.onFormatChanged,
     this.currentCodec,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {

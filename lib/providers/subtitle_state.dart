@@ -66,16 +66,28 @@ class SubtitleState extends ChangeNotifier {
   }
 
   String? get currentCodec {
-    if (_selectedIndex == null || _videoFiles.isEmpty) return null;
+    // Hiç video dosyası yoksa null döndür
+    if (_videoFiles.isEmpty) return null;
 
-    for (var file in _videoFiles) {
-      final track = file.subtitleTracks
-          .where((t) => t.index == getSelectedIndexForVideo(file.path))
-          .firstOrNull;
-      if (track != null) {
-        return track.codec;
+    // Önce manuel veya global olarak seçili indekse sahip bir codec ara
+    if (_selectedIndex != null) {
+      for (var file in _videoFiles) {
+        final track = file.subtitleTracks
+            .where((t) => t.index == getSelectedIndexForVideo(file.path))
+            .firstOrNull;
+        if (track != null) {
+          return track.codec;
+        }
       }
     }
+
+    // Seçili indeks yoksa veya bulunamadıysa, ilk kullanılabilir altyazı parçasının codec'ini döndür
+    for (var file in _videoFiles) {
+      if (file.subtitleTracks.isNotEmpty) {
+        return file.subtitleTracks.first.codec;
+      }
+    }
+
     return null;
   }
 
@@ -91,15 +103,25 @@ class SubtitleState extends ChangeNotifier {
 
   void setSelectedIndex(int? index) {
     _selectedIndex = index;
-    // Global indeks değiştiğinde manuel indeksleri temizle
-    _manualIndices.clear();
 
-    // Index seçildiğinde ve PGS/SUP altyazı ise otomatik olarak SUP formatına geç
     if (index != null) {
+      // Sadece seçilen indekse sahip olmayan videoların manuel seçimlerini temizle
+      for (var file in _videoFiles) {
+        bool hasMatchingTrack =
+            file.subtitleTracks.any((track) => track.index == index);
+        if (!hasMatchingTrack) {
+          _manualIndices.remove(file.path);
+        }
+      }
+
+      // PGS/SUP altyazı kontrolü ve format değişikliği
       final codec = currentCodec;
       if (codec != null && SubtitleUtils.isBitmapSubtitle(codec)) {
         _selectedFormat = 'sup';
       }
+    } else {
+      // index null ise tüm manuel seçimleri temizle
+      _manualIndices.clear();
     }
 
     notifyListeners();

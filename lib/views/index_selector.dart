@@ -7,11 +7,11 @@ class IndexSelector extends StatelessWidget {
   final Function(int?) onIndexChanged;
 
   const IndexSelector({
-    Key? key,
+    super.key,
     required this.selectedIndex,
     required this.availableIndices,
     required this.onIndexChanged,
-  }) : super(key: key);
+  });
 
   @override
   Widget build(BuildContext context) {
