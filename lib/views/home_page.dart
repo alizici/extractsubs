@@ -4,6 +4,8 @@ import 'package:extractsubs/providers/subtitle_state.dart';
 import 'package:extractsubs/services/ffmpeg_service.dart';
 import 'package:extractsubs/services/file_service.dart';
 import 'package:extractsubs/utils/subtitle_utils.dart';
+import 'package:extractsubs/utils/video_utils.dart';
+import 'package:extractsubs/views/drag_drop_area.dart';
 import 'package:extractsubs/views/format_selector.dart';
 import 'package:extractsubs/views/index_selector.dart';
 import 'package:extractsubs/views/settings_page.dart';
@@ -19,15 +21,37 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  Future<void> _pickFiles(BuildContext context) async {
+  Future<void> _processFiles(List<String> filePaths) async {
     final state = Provider.of<SubtitleState>(context, listen: false);
     state.setProcessing(true);
 
     try {
-      final paths = await FileService.pickVideoFiles();
-      if (paths.isNotEmpty) {
+      // Validate files are valid video files
+      final validPaths = <String>[];
+      final errors = <String>[];
+
+      for (var path in filePaths) {
+        final fileName = path.split('/').last;
+
+        // Check file extension
+        if (!VideoUtils.isVideoFormatSupported(path)) {
+          errors.add('$fileName: Desteklenmeyen dosya formatı');
+          continue;
+        }
+
+        // Video format check
+        if (!await VideoUtils.isValidVideoFile(path)) {
+          errors.add(
+              '$fileName: Video dosyası okunamadı veya desteklenmeyen format');
+          continue;
+        }
+
+        validPaths.add(path);
+      }
+
+      if (validPaths.isNotEmpty) {
         final videoFiles = await Future.wait(
-          paths.map((path) async {
+          validPaths.map((path) async {
             final name = path.split('/').last;
             try {
               final tracks = await FFmpegService.getSubtitleTracks(path);
@@ -68,8 +92,41 @@ class _HomePageState extends State<HomePage> {
               backgroundColor: Colors.red,
             ),
           );
+        } else {
+          // Add new files to existing files
+          final currentFiles = state.videoFiles;
+          state.setVideoFiles([...currentFiles, ...validFiles]);
         }
-        state.setVideoFiles(validFiles);
+      }
+
+      // Show errors if any
+      if (errors.isNotEmpty) {
+        if (context.mounted) {
+          await showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+              title: const Text('Dosya Hatası'),
+              content: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ...errors.map((e) => Padding(
+                          padding: const EdgeInsets.only(bottom: 8.0),
+                          child: Text('• $e'),
+                        )),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Tamam'),
+                ),
+              ],
+            ),
+          );
+        }
       }
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -80,6 +137,22 @@ class _HomePageState extends State<HomePage> {
       );
     } finally {
       state.setProcessing(false);
+    }
+  }
+
+  Future<void> _pickFiles(BuildContext context) async {
+    try {
+      final paths = await FileService.pickVideoFiles();
+      if (paths.isNotEmpty) {
+        await _processFiles(paths);
+      }
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(e.toString()),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 
@@ -278,12 +351,13 @@ class _HomePageState extends State<HomePage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                ElevatedButton.icon(
-                  onPressed:
-                      state.isProcessing ? null : () => _pickFiles(context),
-                  icon: const Icon(Icons.file_upload),
-                  label: const Text('Video Dosyalarını Seç'),
+                // Sürükle-bırak alanı (tıklanabilir)
+                DragDropArea(
+                  onFilesDropped: _processFiles,
+                  onTap: () => _pickFiles(context),
+                  isProcessing: state.isProcessing,
                 ),
+
                 const SizedBox(height: 16),
                 if (state.videoFiles.isNotEmpty) ...[
                   Row(
