@@ -6,6 +6,7 @@ import 'package:extractsubs/services/file_service.dart';
 import 'package:extractsubs/utils/subtitle_utils.dart';
 import 'package:extractsubs/views/format_selector.dart';
 import 'package:extractsubs/views/index_selector.dart';
+import 'package:extractsubs/views/settings_page.dart';
 import 'package:extractsubs/views/subtitle_track_selector.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -249,6 +250,19 @@ class _HomePageState extends State<HomePage> {
                     tooltip: 'Tümünü Temizle',
                   )
                 : const SizedBox.shrink(),
+          ),
+          // Yeni eklenen ayarlar butonu
+          IconButton(
+            icon: const Icon(Icons.settings),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => const SettingsPage(),
+                ),
+              );
+            },
+            tooltip: 'Ayarlar',
           ),
         ],
       ),
