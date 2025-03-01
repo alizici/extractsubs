@@ -16,7 +16,7 @@ class DragDropArea extends StatefulWidget {
     Key? key,
     required this.onFilesDropped,
     required this.onTap,
-    this.height = 160.0,
+    this.height = 200.0,
     this.isProcessing = false,
   }) : super(key: key);
 
@@ -30,6 +30,9 @@ class _DragDropAreaState extends State<DragDropArea> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDarkMode = theme.brightness == Brightness.dark;
+
     return DropTarget(
       onDragDone: (detail) {
         if (widget.isProcessing) return;
@@ -60,29 +63,46 @@ class _DragDropAreaState extends State<DragDropArea> {
         onExit: (_) => setState(() => _isHovering = false),
         child: GestureDetector(
           onTap: widget.isProcessing ? null : widget.onTap,
-          child: Container(
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
             height: widget.height,
             width: double.infinity,
             margin: const EdgeInsets.only(bottom: 16.0),
             decoration: BoxDecoration(
               color: _isDragging
-                  ? Theme.of(context).primaryColor.withOpacity(0.2)
+                  ? theme.primaryColor.withAlpha(38)
                   : _isHovering
-                      ? Theme.of(context).hoverColor
-                      : Theme.of(context).cardColor,
-              borderRadius: BorderRadius.circular(8.0),
+                      ? (isDarkMode
+                          ? const Color(0xFF2C2C2E).withAlpha(204)
+                          : Colors.white.withAlpha(204))
+                      : (isDarkMode
+                          ? const Color(0xFF2C2C2E).withAlpha(128)
+                          : Colors.white.withAlpha(128)),
+              borderRadius: BorderRadius.circular(16.0),
               border: Border.all(
                 color: _isDragging
-                    ? Theme.of(context).primaryColor
+                    ? theme.primaryColor
                     : _isHovering
-                        ? Theme.of(context).primaryColor
-                        : Theme.of(context).dividerColor,
-                width: (_isDragging || _isHovering) ? 2.0 : 1.0,
+                        ? theme.primaryColor.withAlpha(128)
+                        : Colors.transparent,
+                width: 1.0,
               ),
+              boxShadow: _isHovering || _isDragging
+                  ? [
+                      BoxShadow(
+                        color: theme.shadowColor.withAlpha(26),
+                        blurRadius: 10,
+                        spreadRadius: 1,
+                      )
+                    ]
+                  : [],
             ),
             child: widget.isProcessing
-                ? const Center(
-                    child: CircularProgressIndicator(),
+                ? Center(
+                    child: CircularProgressIndicator(
+                      color: theme.primaryColor,
+                      strokeWidth: 2.5,
+                    ),
                   )
                 : Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -91,29 +111,54 @@ class _DragDropAreaState extends State<DragDropArea> {
                         Icons.cloud_upload,
                         size: 48.0,
                         color: _isDragging || _isHovering
-                            ? Theme.of(context).primaryColor
-                            : Theme.of(context).iconTheme.color,
+                            ? theme.primaryColor
+                            : theme.iconTheme.color?.withAlpha(178),
                       ),
                       const SizedBox(height: 16.0),
                       Text(
                         _isDragging
                             ? 'Dosyaları bırakın'
                             : 'Video dosyalarını buraya sürükleyin',
-                        style: Theme.of(context).textTheme.titleMedium,
+                        style: theme.textTheme.titleMedium,
                         textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 8.0),
                       Text(
                         'veya dosya seçmek için tıklayın',
-                        style: Theme.of(context).textTheme.bodyMedium,
+                        style: theme.textTheme.bodyMedium,
                         textAlign: TextAlign.center,
                       ),
-                      const SizedBox(height: 4.0),
+                      const SizedBox(height: 12.0),
                       if (_isHovering && !_isDragging)
-                        ElevatedButton.icon(
-                          onPressed: widget.onTap,
-                          icon: const Icon(Icons.file_upload),
-                          label: const Text('Video Dosyalarını Seç'),
+                        Container(
+                          decoration: BoxDecoration(
+                            color: theme.primaryColor,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.file_upload,
+                                  size: 18,
+                                  color: Colors.white,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  'Video Dosyalarını Seç',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
                         ),
                     ],
                   ),

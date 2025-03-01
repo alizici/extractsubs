@@ -75,7 +75,6 @@ class _VideoSubtitleEditorPageState extends State<VideoSubtitleEditorPage> {
     }
   }
 
-  // Replace the _loadSubtitles() method in subtitle_editor_page.dart with this updated version
   Future<void> _loadSubtitles() async {
     try {
       final file = File(widget.subtitlePath);
@@ -173,7 +172,6 @@ class _VideoSubtitleEditorPageState extends State<VideoSubtitleEditorPage> {
     }
   }
 
-// Also update the _saveSubtitles method to preserve the original format
   void _saveSubtitles() async {
     try {
       final file = File(widget.subtitlePath);
@@ -324,7 +322,6 @@ class _VideoSubtitleEditorPageState extends State<VideoSubtitleEditorPage> {
     _seekToSubtitle(subtitles[index]);
   }
 
-// _updateSubtitle metodunun düzeltilmiş hali
   void _updateSubtitle() {
     if (selectedIndex == null) return;
 
@@ -375,6 +372,9 @@ class _VideoSubtitleEditorPageState extends State<VideoSubtitleEditorPage> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDarkMode = theme.brightness == Brightness.dark;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Altyazı Düzenleyici'),
@@ -411,32 +411,133 @@ class _VideoSubtitleEditorPageState extends State<VideoSubtitleEditorPage> {
         ),
         actions: [
           TextButton.icon(
-            icon: const Icon(Icons.cancel),
-            label: const Text('İptal'),
+            icon: Icon(
+              Icons.cancel_outlined,
+              color: hasUnsavedChanges
+                  ? theme.colorScheme.error
+                  : theme.colorScheme.onSurface.withAlpha(128),
+            ),
+            label: Text(
+              'İptal',
+              style: TextStyle(
+                color: hasUnsavedChanges
+                    ? theme.colorScheme.error
+                    : theme.colorScheme.onSurface.withAlpha(128),
+              ),
+            ),
             onPressed: hasUnsavedChanges ? _cancelChanges : null,
           ),
-          TextButton.icon(
-            icon: const Icon(Icons.save),
-            label: const Text('Kaydet'),
-            onPressed: hasUnsavedChanges ? _saveSubtitles : null,
+          const SizedBox(width: 8),
+          Container(
+            margin: const EdgeInsets.only(right: 12),
+            decoration: BoxDecoration(
+              color: hasUnsavedChanges
+                  ? theme.primaryColor
+                  : theme.primaryColor.withAlpha(128),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: TextButton.icon(
+              icon: const Icon(Icons.save, color: Colors.white, size: 18),
+              label: const Text(
+                'Kaydet',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              onPressed: hasUnsavedChanges ? _saveSubtitles : null,
+              style: TextButton.styleFrom(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(6),
+                ),
+              ),
+            ),
           ),
         ],
       ),
       body: Column(
         children: [
-          AspectRatio(
-            aspectRatio: 16 / 9,
-            child: Video(
-              controller: controller,
-              controls: MaterialDesktopVideoControls,
+          // Video Player Container
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.black,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withAlpha(60),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: AspectRatio(
+              aspectRatio: 16 / 9,
+              child: ClipRRect(
+                child: Video(
+                  controller: controller,
+                  controls: MaterialDesktopVideoControls,
+                ),
+              ),
             ),
           ),
+
           if (isLoading)
-            const Center(child: CircularProgressIndicator())
+            Expanded(
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    CircularProgressIndicator(color: theme.primaryColor),
+                    const SizedBox(height: 16),
+                    Text(
+                      'Altyazılar yükleniyor...',
+                      style: TextStyle(
+                        color: theme.colorScheme.onSurface.withAlpha(204),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            )
           else if (subtitles.isEmpty)
-            const Padding(
-              padding: EdgeInsets.all(16.0),
-              child: Text('Altyazı bulunamadı'),
+            Expanded(
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: isDarkMode
+                        ? const Color(0xFF2C2C2E).withAlpha(153)
+                        : Colors.white.withAlpha(153),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isDarkMode
+                          ? Colors.grey[800]!.withAlpha(51)
+                          : Colors.grey[300]!.withAlpha(128),
+                      width: 0.5,
+                    ),
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        Icons.subtitles_off,
+                        size: 48,
+                        color: theme.colorScheme.onSurface.withAlpha(153),
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Altyazı bulunamadı',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w500,
+                          color: theme.colorScheme.onSurface.withAlpha(204),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             )
           else
             Expanded(
@@ -444,9 +545,20 @@ class _VideoSubtitleEditorPageState extends State<VideoSubtitleEditorPage> {
                 children: [
                   // Aktif altyazı gösterimi
                   Container(
-                    padding: const EdgeInsets.all(16),
-                    color: Colors.grey[900],
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 16, horizontal: 24),
+                    decoration: BoxDecoration(
+                      color: isDarkMode ? Colors.grey[900] : Colors.grey[200],
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withAlpha(20),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
                     width: double.infinity,
+                    alignment: Alignment.center,
                     child: StreamBuilder<Duration>(
                       stream: player.stream.position,
                       builder: (context, snapshot) {
@@ -467,17 +579,35 @@ class _VideoSubtitleEditorPageState extends State<VideoSubtitleEditorPage> {
                           ),
                         );
 
+                        if (currentSubtitle.text.isEmpty) {
+                          return SizedBox(
+                            height: 50,
+                            child: Center(
+                              child: Text(
+                                'Aktif altyazı yok',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontStyle: FontStyle.italic,
+                                  color: theme.colorScheme.onSurface
+                                      .withAlpha(153),
+                                ),
+                              ),
+                            ),
+                          );
+                        }
+
                         return Text(
                           currentSubtitle.text,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 20,
-                            color: Colors.white,
+                            color: isDarkMode ? Colors.white : Colors.black87,
                             fontWeight: FontWeight.w500,
                             shadows: [
                               Shadow(
-                                color: Colors.black,
+                                color: Colors.black
+                                    .withAlpha(isDarkMode ? 100 : 50),
                                 blurRadius: 2,
-                                offset: Offset(1, 1),
+                                offset: const Offset(0.5, 0.5),
                               )
                             ],
                           ),
@@ -489,25 +619,90 @@ class _VideoSubtitleEditorPageState extends State<VideoSubtitleEditorPage> {
 
                   // Düzenleme paneli
                   if (selectedIndex != null)
-                    Padding(
+                    Container(
                       padding: const EdgeInsets.all(16.0),
+                      decoration: BoxDecoration(
+                        color: isDarkMode
+                            ? const Color(0xFF2C2C2E).withAlpha(153)
+                            : Colors.white.withAlpha(153),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withAlpha(10),
+                            blurRadius: 4,
+                            offset: const Offset(0, 1),
+                          ),
+                        ],
+                      ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            'Altyazı #${subtitles[selectedIndex!].index} Düzenleme',
-                            style: Theme.of(context).textTheme.titleMedium,
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: theme.primaryColor.withAlpha(26),
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  'Altyazı #${subtitles[selectedIndex!].index}',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    color: theme.primaryColor,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Text(
+                                'Düzenleme',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                  color: theme.colorScheme.onSurface
+                                      .withAlpha(204),
+                                ),
+                              ),
+                            ],
                           ),
-                          const SizedBox(height: 8),
+                          const SizedBox(height: 12),
 
                           // Metin düzenleme
                           TextField(
                             controller: _textController,
-                            decoration: const InputDecoration(
+                            decoration: InputDecoration(
                               labelText: 'Altyazı Metni',
-                              border: OutlineInputBorder(),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: BorderSide(
+                                  color: theme.colorScheme.onSurface
+                                      .withAlpha(100),
+                                ),
+                              ),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: BorderSide(
+                                  color: theme.colorScheme.onSurface
+                                      .withAlpha(100),
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(8),
+                                borderSide: BorderSide(
+                                  color: theme.primaryColor,
+                                ),
+                              ),
+                              filled: true,
+                              fillColor: isDarkMode
+                                  ? Colors.black.withAlpha(50)
+                                  : Colors.white.withAlpha(230),
                             ),
                             maxLines: 3,
+                            style: TextStyle(
+                              color: theme.colorScheme.onSurface,
+                            ),
                           ),
                           const SizedBox(height: 12),
 
@@ -517,43 +712,131 @@ class _VideoSubtitleEditorPageState extends State<VideoSubtitleEditorPage> {
                               Expanded(
                                 child: TextField(
                                   controller: _startTimeController,
-                                  decoration: const InputDecoration(
+                                  decoration: InputDecoration(
                                     labelText: 'Başlangıç (HH:MM:SS,MS)',
-                                    border: OutlineInputBorder(),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                      borderSide: BorderSide(
+                                        color: theme.colorScheme.onSurface
+                                            .withAlpha(100),
+                                      ),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                      borderSide: BorderSide(
+                                        color: theme.primaryColor,
+                                      ),
+                                    ),
+                                    filled: true,
+                                    fillColor: isDarkMode
+                                        ? Colors.black.withAlpha(50)
+                                        : Colors.white.withAlpha(230),
+                                    prefixIcon: Icon(
+                                      Icons.play_circle_outline,
+                                      color: theme.colorScheme.onSurface
+                                          .withAlpha(153),
+                                    ),
                                   ),
                                   inputFormatters: [
-                                    // Zamanlama formatı için maske
                                     FilteringTextInputFormatter.allow(
                                       RegExp(r'[0-9:,]'),
                                     ),
                                   ],
+                                  style: TextStyle(
+                                    color: theme.colorScheme.onSurface,
+                                  ),
                                 ),
                               ),
                               const SizedBox(width: 12),
                               Expanded(
                                 child: TextField(
                                   controller: _endTimeController,
-                                  decoration: const InputDecoration(
+                                  decoration: InputDecoration(
                                     labelText: 'Bitiş (HH:MM:SS,MS)',
-                                    border: OutlineInputBorder(),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                    ),
+                                    enabledBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                      borderSide: BorderSide(
+                                        color: theme.colorScheme.onSurface
+                                            .withAlpha(100),
+                                      ),
+                                    ),
+                                    focusedBorder: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(8),
+                                      borderSide: BorderSide(
+                                        color: theme.primaryColor,
+                                      ),
+                                    ),
+                                    filled: true,
+                                    fillColor: isDarkMode
+                                        ? Colors.black.withAlpha(50)
+                                        : Colors.white.withAlpha(230),
+                                    prefixIcon: Icon(
+                                      Icons.stop_circle_outlined,
+                                      color: theme.colorScheme.onSurface
+                                          .withAlpha(153),
+                                    ),
                                   ),
                                   inputFormatters: [
-                                    // Zamanlama formatı için maske
                                     FilteringTextInputFormatter.allow(
                                       RegExp(r'[0-9:,]'),
                                     ),
                                   ],
+                                  style: TextStyle(
+                                    color: theme.colorScheme.onSurface,
+                                  ),
                                 ),
                               ),
                             ],
                           ),
-                          const SizedBox(height: 12),
+                          const SizedBox(height: 16),
 
                           // Güncelleme butonu
-                          ElevatedButton.icon(
-                            onPressed: _updateSubtitle,
-                            icon: const Icon(Icons.update),
-                            label: const Text('Güncelle'),
+                          Container(
+                            width: double.infinity,
+                            height: 44,
+                            decoration: BoxDecoration(
+                              color: theme.primaryColor,
+                              borderRadius: BorderRadius.circular(8),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: theme.primaryColor.withAlpha(60),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(8),
+                                onTap: _updateSubtitle,
+                                child: Row(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    const Icon(
+                                      Icons.update,
+                                      color: Colors.white,
+                                      size: 20,
+                                    ),
+                                    const SizedBox(width: 10),
+                                    const Text(
+                                      'Güncelle',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w600,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
                           ),
                         ],
                       ),
@@ -561,27 +844,194 @@ class _VideoSubtitleEditorPageState extends State<VideoSubtitleEditorPage> {
 
                   // Altyazı listesi
                   Expanded(
-                    child: ListView.builder(
-                      itemCount: subtitles.length,
-                      itemBuilder: (context, index) {
-                        final subtitle = subtitles[index];
-                        return ListTile(
-                          selected: selectedIndex == index,
-                          title: Text(
-                            subtitle.text,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          subtitle: Text(
-                            '${_formatDuration(subtitle.startTime)} - ${_formatDuration(subtitle.endTime)}',
-                          ),
-                          onTap: () => _selectSubtitle(index),
-                          trailing: IconButton(
-                            icon: const Icon(Icons.edit),
-                            onPressed: () => _selectSubtitle(index),
-                          ),
-                        );
-                      },
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: isDarkMode
+                            ? const Color(0xFF1C1C1E).withAlpha(230)
+                            : Colors.grey[50],
+                      ),
+                      child: ListView.builder(
+                        itemCount: subtitles.length,
+                        itemBuilder: (context, index) {
+                          final subtitle = subtitles[index];
+                          final isSelected = selectedIndex == index;
+
+                          return Container(
+                            margin: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: isSelected
+                                  ? theme.primaryColor.withAlpha(26)
+                                  : isDarkMode
+                                      ? const Color(0xFF2C2C2E).withAlpha(153)
+                                      : Colors.white.withAlpha(153),
+                              borderRadius: BorderRadius.circular(8),
+                              border: Border.all(
+                                color: isSelected
+                                    ? theme.primaryColor
+                                    : isDarkMode
+                                        ? Colors.grey[800]!.withAlpha(51)
+                                        : Colors.grey[300]!.withAlpha(128),
+                                width: 0.5,
+                              ),
+                            ),
+                            child: Material(
+                              color: Colors.transparent,
+                              child: InkWell(
+                                borderRadius: BorderRadius.circular(8),
+                                onTap: () => _selectSubtitle(index),
+                                child: Padding(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 12,
+                                    horizontal: 16,
+                                  ),
+                                  child: Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      // Index & Time Column
+                                      Column(
+                                        crossAxisAlignment:
+                                            CrossAxisAlignment.start,
+                                        children: [
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 6,
+                                              vertical: 2,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: isSelected
+                                                  ? theme.primaryColor
+                                                  : theme.colorScheme.onSurface
+                                                      .withAlpha(26),
+                                              borderRadius:
+                                                  BorderRadius.circular(4),
+                                            ),
+                                            child: Text(
+                                              '#${subtitle.index}',
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w600,
+                                                color: isSelected
+                                                    ? Colors.white
+                                                    : theme
+                                                        .colorScheme.onSurface
+                                                        .withAlpha(204),
+                                              ),
+                                            ),
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Row(
+                                            children: [
+                                              Icon(
+                                                Icons.timer_outlined,
+                                                size: 12,
+                                                color: theme
+                                                    .colorScheme.onSurface
+                                                    .withAlpha(153),
+                                              ),
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                _formatDuration(
+                                                    subtitle.startTime),
+                                                style: TextStyle(
+                                                  fontSize: 11,
+                                                  color: theme
+                                                      .colorScheme.onSurface
+                                                      .withAlpha(153),
+                                                  fontFamily: 'monospace',
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                          const SizedBox(height: 2),
+                                          Row(
+                                            children: [
+                                              Icon(
+                                                Icons.timer_off_outlined,
+                                                size: 12,
+                                                color: theme
+                                                    .colorScheme.onSurface
+                                                    .withAlpha(153),
+                                              ),
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                _formatDuration(
+                                                    subtitle.endTime),
+                                                style: TextStyle(
+                                                  fontSize: 11,
+                                                  color: theme
+                                                      .colorScheme.onSurface
+                                                      .withAlpha(153),
+                                                  fontFamily: 'monospace',
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ],
+                                      ),
+
+                                      const SizedBox(width: 16),
+
+                                      // Text Column
+                                      Expanded(
+                                        child: Padding(
+                                          padding:
+                                              const EdgeInsets.only(top: 2),
+                                          child: Text(
+                                            subtitle.text,
+                                            maxLines: 3,
+                                            overflow: TextOverflow.ellipsis,
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              color: isSelected
+                                                  ? theme.primaryColor
+                                                  : theme.colorScheme.onSurface,
+                                              fontWeight: isSelected
+                                                  ? FontWeight.w500
+                                                  : FontWeight.normal,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+
+                                      // Edit Button
+                                      Padding(
+                                        padding: const EdgeInsets.only(left: 8),
+                                        child: IconButton(
+                                          icon: Icon(
+                                            Icons.edit,
+                                            size: 20,
+                                            color: isSelected
+                                                ? theme.primaryColor
+                                                : theme.colorScheme.onSurface
+                                                    .withAlpha(153),
+                                          ),
+                                          style: IconButton.styleFrom(
+                                            backgroundColor: isSelected
+                                                ? theme.primaryColor
+                                                    .withAlpha(26)
+                                                : Colors.transparent,
+                                            shape: RoundedRectangleBorder(
+                                              borderRadius:
+                                                  BorderRadius.circular(8),
+                                            ),
+                                          ),
+                                          onPressed: () =>
+                                              _selectSubtitle(index),
+                                          tooltip: 'Düzenle',
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
                     ),
                   ),
                 ],

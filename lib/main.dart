@@ -1,5 +1,6 @@
 // lib/main.dart
 import 'package:extractsubs/providers/subtitle_state.dart';
+import 'package:extractsubs/theme/app_theme.dart'; // Yeni tema dosyasını ekledik
 import 'package:extractsubs/views/home_page.dart';
 import 'package:flutter/material.dart';
 import 'package:media_kit/media_kit.dart';
@@ -29,16 +30,8 @@ class SubtitleExtractorApp extends StatelessWidget {
 
         return MaterialApp(
           title: 'Altyazı Çıkarıcı',
-          theme: ThemeData(
-            primarySwatch: Colors.blue,
-            brightness: Brightness.light,
-            useMaterial3: true,
-          ),
-          darkTheme: ThemeData(
-            brightness: Brightness.dark,
-            primarySwatch: Colors.blue,
-            useMaterial3: true,
-          ),
+          theme: AppTheme.lightTheme(), // Yeni macOS benzeri açık tema
+          darkTheme: AppTheme.darkTheme(), // Yeni macOS benzeri koyu tema
           themeMode: themeMode,
           home: const HomePage(),
         );

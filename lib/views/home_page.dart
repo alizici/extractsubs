@@ -58,6 +58,8 @@ class _HomePageState extends State<HomePage> {
               print('Found tracks for $name: ${tracks.length}');
 
               if (tracks.isEmpty) {
+                if (!mounted) return VideoFile(path: path, name: name);
+
                 ScaffoldMessenger.of(context).showSnackBar(
                   SnackBar(
                     content: Text('$name: Altyazı bulunamadı'),
@@ -72,6 +74,8 @@ class _HomePageState extends State<HomePage> {
                 subtitleTracks: tracks,
               );
             } catch (e) {
+              if (!mounted) return VideoFile(path: path, name: name);
+
               ScaffoldMessenger.of(context).showSnackBar(
                 SnackBar(
                   content: Text('$name: Dosya işlenirken hata oluştu: $e'),
@@ -86,6 +90,8 @@ class _HomePageState extends State<HomePage> {
         final validFiles =
             videoFiles.where((vf) => vf.subtitleTracks.isNotEmpty).toList();
         if (validFiles.isEmpty) {
+          if (!mounted) return;
+
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Seçilen dosyalarda altyazı bulunamadı'),
@@ -101,34 +107,36 @@ class _HomePageState extends State<HomePage> {
 
       // Show errors if any
       if (errors.isNotEmpty) {
-        if (context.mounted) {
-          await showDialog(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: const Text('Dosya Hatası'),
-              content: SingleChildScrollView(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    ...errors.map((e) => Padding(
-                          padding: const EdgeInsets.only(bottom: 8.0),
-                          child: Text('• $e'),
-                        )),
-                  ],
-                ),
+        if (!mounted) return;
+
+        await showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Dosya Hatası'),
+            content: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ...errors.map((e) => Padding(
+                        padding: const EdgeInsets.only(bottom: 8.0),
+                        child: Text('• $e'),
+                      )),
+                ],
               ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text('Tamam'),
-                ),
-              ],
             ),
-          );
-        }
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Tamam'),
+              ),
+            ],
+          ),
+        );
       }
     } catch (e) {
+      if (!mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(e.toString()),
@@ -147,6 +155,8 @@ class _HomePageState extends State<HomePage> {
         await _processFiles(paths);
       }
     } catch (e) {
+      if (!mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(e.toString()),
@@ -218,6 +228,8 @@ class _HomePageState extends State<HomePage> {
       }
 
       if (successes.isNotEmpty) {
+        if (!mounted) return;
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('${successes.length} altyazı başarıyla çıkarıldı'),
@@ -228,6 +240,8 @@ class _HomePageState extends State<HomePage> {
       }
 
       if (errors.isNotEmpty) {
+        if (!mounted) return;
+
         await showDialog(
           context: context,
           builder: (context) => AlertDialog(
@@ -253,6 +267,8 @@ class _HomePageState extends State<HomePage> {
         );
       }
     } catch (e) {
+      if (!mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('İşlem sırasında hata oluştu: $e'),
@@ -298,6 +314,8 @@ class _HomePageState extends State<HomePage> {
         );
       }
     } catch (e) {
+      if (!mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text('İşlem sırasında hata oluştu: $e'),
@@ -387,10 +405,10 @@ class _HomePageState extends State<HomePage> {
                     Container(
                       padding: const EdgeInsets.all(8),
                       decoration: BoxDecoration(
-                        color: Colors.orange.withOpacity(0.1),
+                        color: Colors.orange.withAlpha(26),
                         borderRadius: BorderRadius.circular(4),
                         border: Border.all(
-                          color: Colors.orange.withOpacity(0.3),
+                          color: Colors.orange.withAlpha(77),
                         ),
                       ),
                       child: Row(
@@ -429,62 +447,129 @@ class _HomePageState extends State<HomePage> {
                                 .firstOrNull
                             : null;
 
-                        return Card(
-                          margin: const EdgeInsets.only(bottom: 8),
-                          child: Column(
-                            children: [
-                              ListTile(
-                                leading: const Icon(Icons.video_file),
-                                title: Text(videoFile.name),
-                                subtitle: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      'Mevcut altyazılar: ${videoFile.subtitleTracks.map((t) => '${t.language} (${t.index})').join(", ")}',
+                        return Container(
+                          margin: const EdgeInsets.only(bottom: 10),
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).cardTheme.color,
+                            borderRadius: BorderRadius.circular(12),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withAlpha(13),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: Column(
+                              children: [
+                                ListTile(
+                                  leading: Container(
+                                    width: 36,
+                                    height: 36,
+                                    decoration: BoxDecoration(
+                                      color: Theme.of(context)
+                                          .primaryColor
+                                          .withAlpha(26),
+                                      borderRadius: BorderRadius.circular(8),
                                     ),
-                                    if (selectedTrack != null)
+                                    child: Icon(
+                                      Icons.video_file,
+                                      color: Theme.of(context).primaryColor,
+                                      size: 20,
+                                    ),
+                                  ),
+                                  title: Text(
+                                    videoFile.name,
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w500,
+                                      fontSize: 15,
+                                    ),
+                                  ),
+                                  subtitle: Column(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      const SizedBox(height: 4),
                                       Text(
-                                        'Seçili: ${selectedTrack.language} (${selectedTrack.index})',
-                                        style: const TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          color: Colors.green,
+                                        'Mevcut altyazılar: ${videoFile.subtitleTracks.map((t) => '${t.language} (${t.index})').join(", ")}',
+                                        style: TextStyle(
+                                          fontSize: 13,
+                                          color: Theme.of(context)
+                                              .textTheme
+                                              .bodySmall
+                                              ?.color,
                                         ),
                                       ),
-                                  ],
-                                ),
-                                trailing: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    IconButton(
-                                      icon: Icon(
-                                        state.isExpanded(videoFile.path)
-                                            ? Icons.expand_less
-                                            : Icons.expand_more,
+                                      if (selectedTrack != null)
+                                        Padding(
+                                          padding:
+                                              const EdgeInsets.only(top: 4),
+                                          child: Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 8,
+                                              vertical: 2,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: Theme.of(context)
+                                                  .primaryColor
+                                                  .withAlpha(26),
+                                              borderRadius:
+                                                  BorderRadius.circular(6),
+                                            ),
+                                            child: Text(
+                                              'Seçili: ${selectedTrack.language} (${selectedTrack.index})',
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                fontWeight: FontWeight.w500,
+                                                color: Theme.of(context)
+                                                    .primaryColor,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                  trailing: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      IconButton(
+                                        icon: Icon(
+                                          state.isExpanded(videoFile.path)
+                                              ? Icons.expand_less
+                                              : Icons.expand_more,
+                                          size: 22,
+                                        ),
+                                        onPressed: () => state
+                                            .toggleExpanded(videoFile.path),
                                       ),
-                                      onPressed: () =>
-                                          state.toggleExpanded(videoFile.path),
-                                    ),
-                                    IconButton(
-                                      icon: const Icon(Icons.delete),
-                                      onPressed: () =>
-                                          state.removeVideoFile(videoFile.path),
-                                      tooltip: 'Dosyayı Kaldır',
-                                    ),
-                                  ],
+                                      IconButton(
+                                        icon: Icon(
+                                          Icons.delete_outline,
+                                          size: 22,
+                                          color: Colors.red.withAlpha(179),
+                                        ),
+                                        onPressed: () => state
+                                            .removeVideoFile(videoFile.path),
+                                        tooltip: 'Dosyayı Kaldır',
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                              if (state.isExpanded(videoFile.path))
-                                SubtitleTrackSelector(
-                                  videoFile: videoFile,
-                                  onExtract: (params) async {
-                                    await _extractSingleSubtitle(
-                                      context,
-                                      params.videoPath,
-                                      params.trackIndex,
-                                    );
-                                  },
-                                ),
-                            ],
+                                if (state.isExpanded(videoFile.path))
+                                  SubtitleTrackSelector(
+                                    videoFile: videoFile,
+                                    onExtract: (params) async {
+                                      await _extractSingleSubtitle(
+                                        context,
+                                        params.videoPath,
+                                        params.trackIndex,
+                                      );
+                                    },
+                                  ),
+                              ],
+                            ),
                           ),
                         );
                       },
