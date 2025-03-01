@@ -101,18 +101,14 @@ class SubtitleState extends ChangeNotifier {
     return indices;
   }
 
+// Updated setSelectedIndex method for SubtitleState class
   void setSelectedIndex(int? index) {
     _selectedIndex = index;
 
     if (index != null) {
-      // Sadece seçilen indekse sahip olmayan videoların manuel seçimlerini temizle
-      for (var file in _videoFiles) {
-        bool hasMatchingTrack =
-            file.subtitleTracks.any((track) => track.index == index);
-        if (!hasMatchingTrack) {
-          _manualIndices.remove(file.path);
-        }
-      }
+      // When a global index is selected, clear all manual indices
+      // This ensures the global selection applies to all videos
+      _manualIndices.clear();
 
       // PGS/SUP altyazı kontrolü ve format değişikliği
       final codec = currentCodec;

@@ -2,6 +2,7 @@
 import 'dart:io';
 
 import 'package:extractsubs/models/video_file.dart';
+import 'package:extractsubs/services/file_service.dart';
 import 'package:extractsubs/views/subtitle_editor_page.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -72,11 +73,20 @@ class SubtitleTrackSelector extends StatelessWidget {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     // Inside SubtitleTrackSelector class
+                    // Subtitle Track Selector için düzeltilmiş dosya yolu işlemi
+// lib/views/subtitle_track_selector.dart içinde değiştirilecek kısım
+
                     IconButton(
                       icon: const Icon(Icons.edit),
                       onPressed: () async {
-                        final outputPath =
-                            '${videoFile.path}_${track.language}_${track.index}.srt';
+                        // FileService.getOutputPath fonksiyonunu kullanarak, çıkarma işlemiyle aynı dosya yolunu oluştur
+                        final subtitleFormat =
+                            Provider.of<SubtitleState>(context, listen: false)
+                                .selectedFormat;
+                        final outputPath = FileService.getOutputPath(
+                          videoFile.path,
+                          subtitleFormat,
+                        );
 
                         // Altyazı dosyası yoksa, önce çıkarılması gerektiğini kullanıcıya bildir
                         if (!File(outputPath).existsSync()) {
@@ -103,9 +113,12 @@ class SubtitleTrackSelector extends StatelessWidget {
                             );
 
                             if (shouldExtract == true) {
-                              // Sabit gecikme yerine işlemin tamamlanmasını bekle
+                              // Altyazıyı çıkar
                               onExtract(
                                   ExtractParams(videoFile.path, track.index));
+
+                              // Çıkarma işlemi tamamlanana kadar kısa bir bekleme ekle
+                              await Future.delayed(const Duration(seconds: 1));
                             } else {
                               return;
                             }
